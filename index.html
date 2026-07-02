@@ -12,7 +12,12 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--pg);color:var(--t1);line-height:1.5;padding:24px;max-width:1480px;margin:0 auto}
 h1{font-size:22px;font-weight:700;margin-bottom:2px}
-.sub{color:var(--t2);font-size:13px;margin-bottom:16px}
+.sub{color:var(--t2);font-size:13px;margin-bottom:8px}
+.guide{margin-bottom:16px;font-size:12px;color:var(--t2)}
+.guide summary{cursor:pointer;font-weight:600;color:var(--tm);padding:4px 0;list-style:none}
+.guide summary::-webkit-details-marker{display:none}
+.guide-body{background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:12px 16px;margin-top:6px;line-height:1.8}
+.guide-body b{color:var(--t1)}.guide-body code{background:var(--kbg);padding:1px 5px;border-radius:3px;font-size:11px}
 .toolbar{display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
 .toolbar select,.toolbar input{font-size:12px;padding:5px 8px;border:1px solid var(--grid);border-radius:4px;background:var(--card);color:var(--t1)}
 .toolbar input{width:180px}
@@ -36,6 +41,7 @@ tbody td.tk{text-align:left;font-size:11px;color:var(--t2)}
 tbody tr:hover{background:var(--kbg)}
 .pos{color:var(--up)}.neg{color:var(--dn)}
 .nb{display:inline-block;font-size:9px;font-weight:700;padding:1px 5px;border-radius:8px;background:rgba(237,161,0,.15);color:#b08600;margin-left:4px}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:3px;vertical-align:middle}
 .spark{width:140px;height:48px}
 .pager{display:flex;justify-content:center;align-items:center;gap:8px;padding:16px;font-size:13px}
 .pager button{padding:4px 12px;border:1px solid var(--grid);border-radius:4px;background:var(--card);color:var(--t1);cursor:pointer;font-size:12px}
@@ -64,6 +70,18 @@ td.sorted{background:rgba(42,120,214,.04)}
 <body>
 <h1>출고 순위 대시보드</h1>
 <p class="sub">Tableau 출고데이터 뷰 기준 · 장난감 카테고리 · SKU코드/매출/원가 Tableau 연동</p>
+<details class="guide">
+<summary>사용 가이드 ▾</summary>
+<div class="guide-body">
+<b>연도 전환</b> — 상단 <code>2026 H1</code> / <code>2025 연간</code> 버튼으로 기간 선택. 2026은 1~6월, 2025는 연간 데이터.<br>
+<b>Summary / 월별추이</b> — Summary는 종합 테이블 + Top 10 카드, 월별추이는 월별 수량·매출 히트맵 뷰.<br>
+<b>SKU명 / 상품명</b> — SKU 단위와 상품명(묶음) 단위 전환. 매출액·원가·공헌이익은 SKU 뷰에서만 표시.<br>
+<b>수량 / 매출액</b> — 월별추이 진입 시 활성화. 매출액은 SKU 뷰에서만 조회 가능.<br>
+<b>Top 10 카드</b> — 매출(파랑)·공헌이익(초록)·공헌이익률(주황)·출고수량(보라) 상위 10개. 테이블 해당 셀에도 같은 색으로 표시.<br>
+<b>정렬</b> — 컬럼 헤더 클릭으로 정렬 전환. 현재 정렬 기준 열은 파란 하이라이트.<br>
+<b>검색·필터</b> — SKU코드/상품명 검색, 신제품/기존 필터 지원.
+</div>
+</details>
 
 <div class="year-toggle" id="yearTabs">
   <button class="yt on" data-y="26">2026 H1</button>
@@ -7207,6 +7225,14 @@ function render(){
     const nb=d.isNew?'<span class="nb">NEW</span>':'';
     const yStr=d.yoy!==null?((d.yoy>=0?'+':'')+d.yoy.toFixed(0)+'%'):'—';
     const yCls=d.yoy!==null?(d.yoy>=0?'pos':'neg'):'';
+    const inRev=pageMode==='summary'&&topSets.rev.has(d.s);
+    const inCm=pageMode==='summary'&&topSets.cm.has(d.s);
+    const inCmR=pageMode==='summary'&&topSets.cmRate.has(d.s);
+    const inQty=pageMode==='summary'&&topSets.qty.has(d.s);
+    const hRev=inRev?'background:rgba(42,120,214,.12);font-weight:700':'';
+    const hCm=inCm?'background:rgba(27,175,122,.12);font-weight:700':'';
+    const hCmR=inCmR?'background:rgba(237,161,0,.12);font-weight:700':'';
+    const hQty=inQty?'background:rgba(108,92,231,.12);font-weight:700':'';
     tb+='<tr><td class="tc">'+rank+'</td>';
     if(viewMode==='product'){
       tb+='<td class="tl'+sk('s')+'">'+d.s+nb+'</td>';
@@ -7215,16 +7241,16 @@ function render(){
       tb+='<td class="tl'+sk('s')+'">'+d.s+nb+'</td>';
       tb+='<td class="tk'+sk('skuCode')+'">'+(d.skuCode||'—')+'</td>';
     }
-    tb+='<td class="'+sk('qty')+'"><b>'+f(d.qty)+'</b></td>';
+    tb+='<td class="'+sk('qty')+'"'+(hQty?' style="'+hQty+'"':'')+'><b>'+f(d.qty)+'</b></td>';
     tb+='<td class="'+sk('h1Other')+'">'+f(d.h1Other)+'</td>';
     tb+='<td class="'+yCls+sk('yoy')+'">'+yStr+'</td>';
     if(viewMode==='sku'){
-      tb+='<td class="'+sk('rev')+'">'+(d.rev?f(d.rev):'—')+'</td>';
+      tb+='<td class="'+sk('rev')+'"'+(hRev?' style="'+hRev+'"':'')+'>'+(d.rev?f(d.rev):'—')+'</td>';
       tb+='<td class="'+sk('costRate')+'">'+(d.costRate!==null?d.costRate.toFixed(1)+'%':'—')+'</td>';
       const cmCls=d.cm>0?'pos':d.cm<0?'neg':'';
-      tb+='<td class="'+cmCls+sk('cm')+'">'+(d.cm?f(d.cm):'—')+'</td>';
+      tb+='<td class="'+cmCls+sk('cm')+'"'+(hCm?' style="'+hCm+'"':'')+'>'+(d.cm?f(d.cm):'—')+'</td>';
       const crCls=d.cmRate!==null?(d.cmRate>=0?'pos':'neg'):'';
-      tb+='<td class="'+crCls+sk('cmRate')+'">'+(d.cmRate!==null?d.cmRate.toFixed(1)+'%':'—')+'</td>';
+      tb+='<td class="'+crCls+sk('cmRate')+'"'+(hCmR?' style="'+hCmR+'"':'')+'>'+(d.cmRate!==null?d.cmRate.toFixed(1)+'%':'—')+'</td>';
     }
     tb+='<td><div class="spark"><canvas data-i="'+i+'"></canvas></div></td>';
     tb+='</tr>';
@@ -7255,15 +7281,21 @@ function render(){
   setTimeout(drawSparks,10);
 }
 
+let topSets={rev:new Set(),cm:new Set(),cmRate:new Set(),qty:new Set()};
 function renderSummary(){
   const rows=getFiltered();
   const byRev=[...rows].filter(d=>d.rev>0).sort((a,b)=>b.rev-a.rev).slice(0,10);
   const byCm=[...rows].filter(d=>d.cm!==0).sort((a,b)=>b.cm-a.cm).slice(0,10);
   const byCmRate=[...rows].filter(d=>d.cmRate!==null&&d.rev>=1000000).sort((a,b)=>b.cmRate-a.cmRate).slice(0,10);
   const byQty=[...rows].sort((a,b)=>b.qty-a.qty).slice(0,10);
+  topSets={rev:new Set(byRev.map(d=>d.s)),cm:new Set(byCm.map(d=>d.s)),cmRate:new Set(byCmRate.map(d=>d.s)),qty:new Set(byQty.map(d=>d.s))};
   function card(title,color,data,fmtVal){
+    const a=.10,step=a/data.length;
     let h='<div class="s-card"><h3><span class="s-icon" style="background:'+color+'">'+title.charAt(0)+'</span>'+title+'</h3><ol>';
-    data.forEach((d,i)=>{h+='<li><span class="s-name">'+(i+1)+'. '+d.s+'</span><span class="s-val">'+fmtVal(d)+'</span></li>';});
+    data.forEach((d,i)=>{
+      const bg='background:'+color+Math.round((a-step*i)*255).toString(16).padStart(2,'0');
+      h+='<li style="'+bg+';border-radius:4px;padding:4px 6px;margin-bottom:2px;border:none"><span class="s-name">'+(i+1)+'. '+d.s+'</span><span class="s-val">'+fmtVal(d)+'</span></li>';
+    });
     return h+'</ol></div>';
   }
   const el=document.getElementById('summaryCards');
